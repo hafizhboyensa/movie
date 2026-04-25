@@ -11,14 +11,16 @@ class MovieRepository implements MovieRepositoryInterface
 {
     public function getAll($search)
     {
-        $query = Movie::latest();
+        $movieQuery = Movie::latest();
 
         if ($search) {
-            $query->where('judul', 'like', "%$search%")
-                ->orWhere('sinopsis', 'like', "%$search%");
+            $movieQuery->where(function ($query) use ($search) {
+                $query->where('judul', 'like', "%$search%")
+                      ->orWhere('sinopsis', 'like', "%$search%");
+            });
         }
 
-        return $query->paginate(6)->appends(['search' => $search]);
+        return $movieQuery->paginate(6)->appends(['search' => $search]);
     }
 
     public function findById($id)
@@ -28,9 +30,11 @@ class MovieRepository implements MovieRepositoryInterface
 
     public function store($request)
     {
-        $fileName = Str::uuid() . '.jpg';
+        $fileName = null;
 
-        $request->file('foto_sampul')->move(public_path('images'), $fileName);
+        if ($request->hasFile('foto_sampul')) {
+            $fileName = $this->uploadImage($request->file('foto_sampul'));
+        }
 
         return Movie::create([
             'id' => $request->id,
@@ -47,19 +51,25 @@ class MovieRepository implements MovieRepositoryInterface
     {
         $movie = Movie::findOrFail($id);
 
-        if ($request->hasFile('foto_sampul')) {
-            $fileName = Str::uuid() . '.' . $request->file('foto_sampul')->getClientOriginalExtension();
+        $data = [
+            'judul' => $request->judul,
+            'category_id' => $request->category_id,
+            'sinopsis' => $request->sinopsis,
+            'tahun' => $request->tahun,
+            'pemain' => $request->pemain,
+        ];
 
-            $request->file('foto_sampul')->move(public_path('images'), $fileName);
+        if ($request->hasFile('foto_sampul')) {
+            $fileName = $this->uploadImage($request->file('foto_sampul'));
 
             if (File::exists(public_path('images/' . $movie->foto_sampul))) {
                 File::delete(public_path('images/' . $movie->foto_sampul));
             }
 
-            $movie->update(array_merge($request->all(), ['foto_sampul' => $fileName]));
-        } else {
-            $movie->update($request->all());
+            $data['foto_sampul'] = $fileName;
         }
+
+        $movie->update($data);
 
         return $movie;
     }
@@ -73,5 +83,13 @@ class MovieRepository implements MovieRepositoryInterface
         }
 
         return $movie->delete();
+    }
+
+    private function uploadImage($file)
+    {
+        $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('images'), $fileName);
+
+        return $fileName;
     }
 }
