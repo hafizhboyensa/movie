@@ -7,28 +7,30 @@ use App\Models\Movie;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
+use App\Services\MovieService;
+
 
 class MovieController extends Controller
 {
 
+    protected $movieServices;
+
+    public function __construct(MovieService $movieServices)
+    {
+        $this->movieServices = $movieServices;
+    }
+
     public function index()
     {
-
-        $query = Movie::latest();
-        if (request('search')) {
-            $query->where('judul', 'like', '%' . request('search') . '%')
-                ->orWhere('sinopsis', 'like', '%' . request('search') . '%');
-        }
-        $movies = $query->paginate(6)->withQueryString();
+        $movies = $this->movieServices->getAllMovies(Request('search'));
         return view('homepage', compact('movies'));
     }
 
     public function detail($id)
     {
-        $movie = Movie::find($id);
+        $movie = $this->movieServices->getMovieById($id);
         return view('detail', compact('movie'));
     }
 
