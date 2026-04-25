@@ -62,21 +62,12 @@ class MovieController extends Controller
     public function update(Request $request, $id)
     {
         $this->movieServices->updateMovie($request, $id);
-        return redirect('/')->with('success','Data berhasil disimpan');
+        return redirect('/movies/data')->with('success','Data berhasil disimpan');
     }
 
     public function delete($id)
     {
-        $movie = Movie::findOrFail($id);
-
-        // Delete the movie's photo if it exists
-        if (File::exists(public_path('images/' . $movie->foto_sampul))) {
-            File::delete(public_path('images/' . $movie->foto_sampul));
-        }
-
-        // Delete the movie record from the database
-        $movie->delete();
-
-        return redirect('/movies/data')->with('success', 'Data berhasil dihapus');
+        $this->movieServices->deleteMovie($id);
+        return redirect('/movies/data')->with('success','Data berhasil disimpan');
     }
 }
