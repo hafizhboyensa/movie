@@ -42,18 +42,8 @@ class MovieController extends Controller
 
     public function store(StoreMovieRequest $request)
     {
-        // Ambil data yang sudah tervalidasi
-        $validated = $request->validated();
-
-        // Simpan file foto jika ada
-        if ($request->hasFile('foto_sampul')) {
-            $validated['foto_sampul'] = $request->file('foto_sampul')->store('movie_covers', 'public');
-        }
-
-        // Simpan data ke database
-        Movie::create($validated);
-
-        return redirect('/')->with('success', 'Film berhasil ditambahkan.');
+        $this->movieServices->createMovie($request);
+        return redirect('/')->with('success','Data berhasil disimpan');
     }
 
     public function data()
